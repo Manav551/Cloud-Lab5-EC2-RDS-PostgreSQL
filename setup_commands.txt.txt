@@ -1,0 +1,45 @@
+# =============================================================
+# AWS CLOUD DEPLOYMENT SETUP COMMANDS - ASSIGNMENT 1
+# Project: Orchard Core CMS with PostgreSQL RDS
+# Author: Manav Shetty
+# =============================================================
+
+# --- 1. UBUNTU SERVER PREPARATION ---
+# Update the package manager and install the .NET 8.0 Runtime
+sudo apt-get update
+sudo apt-get install -y aspnetcore-runtime-8.0
+
+# --- 2. APPLICATION DEPLOYMENT ---
+# Create the web directory and set ownership permissions
+sudo mkdir -p /var/www/orchard
+sudo chown -R $USER:$USER /var/www/orchard
+cd /var/www/orchard
+
+# Run the Orchard Core application on Port 80
+# Use nohup to keep the process running after closing the SSH session
+nohup sudo dotnet OrchardCore.Cms.Web.dll --urls "http://0.0.0.0:80" &
+
+# --- 3. NETWORKING & DATABASE CONNECTIVITY ---
+# Install the PostgreSQL client to interact with the RDS instance
+sudo apt-get install -y postgresql-client
+
+# Test the connection to the RDS endpoint on Port 5432
+# This verifies that the Security Group allows EC2-to-RDS traffic
+psql -h orchard-db.cl60o08scmw9.ap-south-1.rds.amazonaws.com -U orchard_admin -d postgres
+
+# --- 4. SCHEMA VERIFICATION (INSIDE PSQL PROMPT) ---
+# List all tables to confirm the minimum 2-table requirement
+\dt
+
+# View the metadata structure in the searchable index table
+SELECT "ContentItemId", "Latest", "Published" FROM "ContentItemIndex" LIMIT 5;
+
+# Exit the PostgreSQL prompt
+\q
+
+# --- 5. LOGS & TROUBLESHOOTING ---
+# Check the status of the running .NET application
+ps aux | grep dotnet
+
+# (Optional) Verify connectivity path from a Windows environment
+# Test-NetConnection -ComputerName orchard-db.cl60o08scmw9.ap-south-1.rds.amazonaws.com -Port 5432
